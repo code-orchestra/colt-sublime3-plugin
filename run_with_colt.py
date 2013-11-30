@@ -53,7 +53,7 @@ class ColtAutosaveListener(sublime_plugin.EventListener):
 class ColtCompletitions(sublime_plugin.EventListener):
         
         def on_query_completions(self, view, prefix, locations):                
-                if not colt.isColtFile(view) :
+                if not isColtFile(view) :
                         return []
 
                 position = getPositionEnd(view)
@@ -70,8 +70,8 @@ class ColtCompletitions(sublime_plugin.EventListener):
                 if not isConnected() or not hasActiveSessions() :
                         return []
 
-                response = getContextForPosition(view.file_name(), position, getContent(view), "PROPERTIES")
-                if response.has_key("error") :
+                response = COLT.colt_rpc.getContextForPosition(view.file_name(), position, getContent(view), "PROPERTIES")
+                if "error" in response :
                         return []
 
                 result = response["result"]
@@ -140,7 +140,7 @@ class ColtGoToDeclarationCommand(sublime_plugin.WindowCommand):
                 content = getContent(view)
 
                 resultJSON = COLT.colt_rpc.getDeclarationPosition(fileName, position, content)
-                if resultJSON.has_key("error") or resultJSON["result"] is None :
+                if "error" in resultJSON or resultJSON["result"] is None :
                         # sublime.error_message("Can't find a declaration")
                         return
 
@@ -149,7 +149,6 @@ class ColtGoToDeclarationCommand(sublime_plugin.WindowCommand):
 
                 targetView = self.window.open_file(filePath)
                 targetView.sel().clear()
-                targetView.sel().add(sublime.Region(position))
                 targetView.sel().add(sublime.Region(position))
                 
                 targetView.show_at_center(position)
@@ -199,7 +198,7 @@ class ColtViewValueCommand(sublime_plugin.WindowCommand):
                 
                 position = getWordPosition(view)
                 resultJSON = COLT.colt_rpc.getContextForPosition(view.file_name(), position, getContent(view), "VALUE")
-                if resultJSON.has_key("result") :
+                if "result" in resultJSON :
                         position = getPosition(view)
                         word = view.word(position)
 
@@ -207,7 +206,7 @@ class ColtViewValueCommand(sublime_plugin.WindowCommand):
                         if result is None :
                                 self.appendToConsole(outputPanel, view.substr(word) + " value: unknown")
                         else :
-                                self.appendToConsole(outputPanel, view.substr(word) + " value: " + result)
+                                self.appendToConsole(outputPanel, result)
 
         def appendToConsole(self, outputPanel, text):
                 edit = outputPanel.begin_edit("COLT output")

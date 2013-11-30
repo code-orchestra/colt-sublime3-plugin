@@ -1,12 +1,12 @@
 import sublime
-import urllib
+import urllib, urllib.request
 import json
 import COLT.colt
 import calendar, time
 import os
 import threading
 
-from User.colt import ColtPreferences
+from COLT.colt import ColtPreferences
 
 runAfterAuthorization = None
 statusToSet = "Disconnected from COLT"
@@ -94,7 +94,7 @@ def onShortKeyInput(shortCode):
 
             runAfterAuthorization()
         except Exception:
-            sublime.error_message("Can't authorize with COLT. Make sure COLT is active and running")
+            #sublime.error_message("Can't authorize with COLT. Make sure COLT is active and running")
             return
     else :
         sublime.error_message("Short authorization key can't be empty")  
@@ -102,7 +102,7 @@ def onShortKeyInput(shortCode):
 
 def obtainAuthToken(shortCode):
     response = runRPC(ColtConnection.port, "obtainAuthToken", [ shortCode ])
-    if response.has_key("error") :
+    if "error" in response :
             return None
 
     return response["result"]
@@ -128,12 +128,12 @@ def runRPC(port, methodName, params):
     response = None
 
     try :
-        response = urllib.request.urlopen(req, jsonRequestStr)
+        response = urllib.request.urlopen(req, jsonRequestStr.encode('UTF-8'))
     except Exception :
         disconnect()
         raise
     
-    return json.loads(response.read())
+    return json.loads(response.read().decode("utf-8"))
 
 def reload():
     return runRPC(ColtConnection.port, "reload", [ getSecurityToken() ])
@@ -161,7 +161,7 @@ def getContextForPosition(filePath, position, currentContent, contextType):
 
 def getMethodId(filePath, position, currentContent):
     resultJSON = runRPC(ColtConnection.port, "getMethodId", [ getSecurityToken(), filePath, position, currentContent ])
-    if resultJSON.has_key("error") :
+    if "error" in resultJSON :
         return None
 
     return resultJSON["result"]
@@ -199,6 +199,7 @@ def initAndConnect(settings, projectPath):
 
 def locateCOLTServicePort(projectPath): 
     port = getRPCPortForProject(projectPath)
+    
     if port is None :
         return None
 
