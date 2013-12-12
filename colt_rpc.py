@@ -73,10 +73,10 @@ def makeNewSecurityToken(newRequest, window):
         try :
             requestShortCode()
         except Exception :
-            sublime.error_message("Can't request an authorization key from COLT. Make sure COLT is active and running")
+            sublime.error_message("Authorization request failed. Make sure COLT is active and running.")
             return
 
-    window.show_input_panel("Enter the short key at the bottom of the screen displayed in COLT:", "", onShortKeyInput, None, None)
+    window.show_input_panel("Enter authorization code displayed in top of COLT window:", "", onShortKeyInput, None, None)
 
 def onShortKeyInput(shortCode):    
     if shortCode :
@@ -94,7 +94,7 @@ def onShortKeyInput(shortCode):
 
             runAfterAuthorization()
         except Exception:
-            #sublime.error_message("Can't authorize with COLT. Make sure COLT is active and running")
+            #sublime.error_message("Unable to authorize with COLT. Make sure COLT is active and running")
             return
     else :
         sublime.error_message("Short authorization key can't be empty")  
@@ -159,6 +159,12 @@ def getDeclarationPosition(filePath, position, currentContent):
 def getContextForPosition(filePath, position, currentContent, contextType):
     return runRPC(ColtConnection.port, "getContextForPosition", [ getSecurityToken(), filePath, position, currentContent, contextType ])
 
+def getCallCount(filePath, position, currentContent):
+    return runRPC(ColtConnection.port, "getCallCount", [ getSecurityToken(), filePath, position, currentContent ])
+
+def resetCallCounts():
+    return runRPC(ColtConnection.port, "resetCallCounts", [ getSecurityToken() ])
+
 def getMethodId(filePath, position, currentContent):
     resultJSON = runRPC(ColtConnection.port, "getMethodId", [ getSecurityToken(), filePath, position, currentContent ])
     if "error" in resultJSON :
@@ -199,7 +205,6 @@ def initAndConnect(settings, projectPath):
 
 def locateCOLTServicePort(projectPath): 
     port = getRPCPortForProject(projectPath)
-    
     if port is None :
         return None
 

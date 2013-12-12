@@ -28,7 +28,7 @@ def getContent(view):
 
 def isAutosaveEnabled():
         settings = sublime.load_settings(ColtPreferences.NAME)
-        return settings.get("autosave", True)
+        return settings.get("autosave", False)
 
 class ToggleAutosaveCommand(sublime_plugin.ApplicationCommand):
         def run(self):
@@ -184,7 +184,53 @@ class ColtRunFunctionCommand(sublime_plugin.WindowCommand):
                 if view is None :
                         return False
                 return isColtFile(view) and isConnected() and hasActiveSessions()
+        
+class ColtResetCallCountsCommand(sublime_plugin.WindowCommand):
+        def run(self):
+                COLT.colt_rpc.resetCallCounts()
 
+        def is_enabled(self):
+                view = self.window.active_view()
+                if view is None :
+                        return False
+                return isColtFile(view) and isConnected() and hasActiveSessions()
+
+class ColtViewCallCountCommand(sublime_plugin.WindowCommand):
+        def run(self):
+                view = self.window.active_view()
+
+                outputPanel = self.window.get_output_panel("COLT")
+                outputPanel.set_scratch(True)
+                outputPanel.set_read_only(False)
+                outputPanel.set_name("COLT")
+                self.window.run_command("show_panel", {"panel": "output.COLT"})
+                self.window.set_view_index(outputPanel, 1, 0)
+                
+                position = getWordPosition(view)
+                resultJSON = COLT.colt_rpc.getCallCount(view.file_name(), position, getContent(view))
+
+                if "result" in resultJSON :
+                        position = getPosition(view)
+                        word = view.word(position)
+
+                        result = resultJSON["result"]
+                        if result is None :
+                                self.appendToConsole(outputPanel, "Call count is not available")
+                        else :
+                                self.appendToConsole(outputPanel, "Call count: " + str(result))
+
+        def appendToConsole(self, outputPanel, text):
+                edit = outputPanel.begin_edit("COLT output")
+                edit = outputPanel.begin_edit()
+                outputPanel.insert(edit, outputPanel.size(), text + '\n')
+                outputPanel.end_edit(edit)
+                outputPanel.show(outputPanel.size())
+
+        def is_enabled(self):
+                view = self.window.active_view()
+                if view is None :
+                        return False
+                return isColtFile(view) and isConnected() and hasActiveSessions()
 class ColtViewValueCommand(sublime_plugin.WindowCommand):
         def run(self):
                 view = self.window.active_view()
