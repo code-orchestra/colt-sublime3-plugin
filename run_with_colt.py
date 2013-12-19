@@ -155,6 +155,7 @@ class ColtGoToDeclarationCommand(sublime_plugin.WindowCommand):
                 targetView.show_at_center(position)
                 
                 # work around sublime bug with caret position not refreshing
+                # does not seem to be reliable in ST3, need better method...
                 bug = [s for s in targetView.sel()]
                 targetView.add_regions("bug", bug, "bug", "dot", sublime.HIDDEN | sublime.PERSISTENT)
                 targetView.erase_regions("bug")
@@ -221,22 +222,23 @@ class ColtViewCallCountCommand(sublime_plugin.WindowCommand):
 
                         result = resultJSON["result"]
                         if result is None :
-                                self.appendToConsole(outputPanel, "Call count is not available")
+                                outputPanel.run_command("append_to_console", {"text": "Call count is not available"})
                         else :
-                                self.appendToConsole(outputPanel, "Call count: " + str(result))
-
-        def appendToConsole(self, outputPanel, text):
-                edit = outputPanel.begin_edit("COLT output")
-                edit = outputPanel.begin_edit()
-                outputPanel.insert(edit, outputPanel.size(), text + '\n')
-                outputPanel.end_edit(edit)
-                outputPanel.show(outputPanel.size())
+                                outputPanel.run_command("append_to_console", {"text": "Call count: " + str(result)})
 
         def is_enabled(self):
                 view = self.window.active_view()
                 if view is None :
                         return False
                 return isColtFile(view) and isConnected() and hasActiveSessions()
+                
+# begin_end() and end_edit() are no longer accessible
+# http://www.sublimetext.com/docs/3/porting_guide.html
+class AppendToConsoleCommand(sublime_plugin.TextCommand):
+        def run(self, edit, text):
+                self.view.insert(edit, self.view.size(), text + '\n')
+                self.view.show(self.size())
+                
 class ColtViewValueCommand(sublime_plugin.WindowCommand):
         def run(self):
                 view = self.window.active_view()
@@ -262,16 +264,9 @@ class ColtViewValueCommand(sublime_plugin.WindowCommand):
 
                         result = resultJSON["result"]
                         if result is None :
-                                self.appendToConsole(outputPanel, view.substr(word) + " value: unknown")
+                                outputPanel.run_command("append_to_console", {"text": view.substr(word) + " value: unknown"})
                         else :
-                                self.appendToConsole(outputPanel, result)
-
-        def appendToConsole(self, outputPanel, text):
-                edit = outputPanel.begin_edit("COLT output")
-                edit = outputPanel.begin_edit()
-                outputPanel.insert(edit, outputPanel.size(), text + '\n')
-                outputPanel.end_edit(edit)
-                outputPanel.show(outputPanel.size())
+                                outputPanel.run_command("append_to_console", {"text": result})
 
         def is_enabled(self):
                 view = self.window.active_view()
@@ -287,7 +282,7 @@ class ColtReloadCommand(sublime_plugin.WindowCommand):
                 view = self.window.active_view()
                 if view is None :
                         return False
-                return isConnected() and colt_rpc.hasActiveSessions()
+                return isConnected() and hasActiveSessions()
 class ColtClearLogCommand(sublime_plugin.WindowCommand):
         def run(self):
                 COLT.colt_rpc.clearLog()
@@ -315,7 +310,7 @@ class OpenInColtCommand(AbstractColtRunCommand):
                 
                 # Check the file name
                 file = self.window.active_view().file_name()
-                if re.match(r'.*\\.html?$', file):
+                if re.match(r'.*\.html?$', file):
                     OpenInColtCommand.html = file
                     
                 if OpenInColtCommand.html is None :
@@ -343,7 +338,7 @@ class RunWithColtCommand(AbstractColtRunCommand):
                 
                 # Check the file name
                 file = self.window.active_view().file_name()
-                if re.match(r'.*\\.html?$', file):
+                if re.match(r'.*\.html?$', file):
                     OpenInColtCommand.html = file
                     
                 if OpenInColtCommand.html is None :
