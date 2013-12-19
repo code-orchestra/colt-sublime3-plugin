@@ -94,7 +94,7 @@ def onShortKeyInput(shortCode):
 
             runAfterAuthorization()
         except Exception:
-            #sublime.error_message("Unable to authorize with COLT. Make sure COLT is active and running")
+            sublime.error_message("Unable to authorize with COLT. Make sure COLT is active and running")
             return
     else :
         sublime.error_message("Short authorization key can't be empty")  
@@ -138,6 +138,9 @@ def runRPC(port, methodName, params):
 def reload():
     return runRPC(ColtConnection.port, "reload", [ getSecurityToken() ])
 
+def clearLog():
+    return runRPC(ColtConnection.port, "clearLog", [ getSecurityToken() ])
+
 def startLive():
     securityToken = getSecurityToken()
     if not getSecurityToken() is None :                        
@@ -158,6 +161,9 @@ def getDeclarationPosition(filePath, position, currentContent):
 
 def getContextForPosition(filePath, position, currentContent, contextType):
     return runRPC(ColtConnection.port, "getContextForPosition", [ getSecurityToken(), filePath, position, currentContent, contextType ])
+
+def evaluateExpression(filePath, expression, position, currentContent):
+    return runRPC(ColtConnection.port, "evaluateExpression", [ getSecurityToken(), filePath, expression, position, currentContent ])
 
 def getCallCount(filePath, position, currentContent):
     return runRPC(ColtConnection.port, "getCallCount", [ getSecurityToken(), filePath, position, currentContent ])

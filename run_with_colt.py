@@ -2,6 +2,7 @@ import sublime, sublime_plugin
 import COLT.colt, COLT.colt_rpc
 import os.path
 import json
+import re
 
 from COLT.colt import ColtPreferences, isColtFile
 from COLT.colt_rpc import ColtConnection, isConnected, hasActiveSessions
@@ -152,6 +153,11 @@ class ColtGoToDeclarationCommand(sublime_plugin.WindowCommand):
                 targetView.sel().add(sublime.Region(position))
                 
                 targetView.show_at_center(position)
+                
+                # work around sublime bug with caret position not refreshing
+                bug = [s for s in targetView.sel()]
+                targetView.add_regions("bug", bug, "bug", "dot", sublime.HIDDEN | sublime.PERSISTENT)
+                targetView.erase_regions("bug")
 
         def is_enabled(self):
                 view = self.window.active_view()
@@ -243,7 +249,13 @@ class ColtViewValueCommand(sublime_plugin.WindowCommand):
                 self.window.set_view_index(outputPanel, 1, 0)
                 
                 position = getWordPosition(view)
-                resultJSON = COLT.colt_rpc.getContextForPosition(view.file_name(), position, getContent(view), "VALUE")
+                
+                expression = None
+                for sel in view.sel() :
+                    if expression is None :
+                        expression = view.substr(sel)
+                
+                resultJSON = COLT.colt_rpc.evaluateExpression(view.file_name(), expression, position, getContent(view))
                 if "result" in resultJSON :
                         position = getPosition(view)
                         word = view.word(position)
@@ -275,7 +287,16 @@ class ColtReloadCommand(sublime_plugin.WindowCommand):
                 view = self.window.active_view()
                 if view is None :
                         return False
-                return isColtFile(view) and isConnected() and hasActiveSessions()
+                return isConnected() and colt_rpc.hasActiveSessions()
+class ColtClearLogCommand(sublime_plugin.WindowCommand):
+        def run(self):
+                COLT.colt_rpc.clearLog()
+
+        def is_enabled(self):
+                view = self.window.active_view()
+                if view is None :
+                        return False
+                return isConnected() and hasActiveSessions()
 
 class StartColtCommand(AbstractColtRunCommand):
 
@@ -287,11 +308,23 @@ class StartColtCommand(AbstractColtRunCommand):
 
 class OpenInColtCommand(AbstractColtRunCommand):
 
+        html = None
+
         def run(self):
                 settings = self.getSettings()
+                
+                # Check the file name
+                file = self.window.active_view().file_name()
+                if re.match(r'.*\\.html?$', file):
+                    OpenInColtCommand.html = file
+                    
+                if OpenInColtCommand.html is None :
+                    # Error message
+                    sublime.error_message('This tab is not html file. Please open project main html and try again.')
+                    return
 
                 # Export COLT project
-                coltProjectFilePath = COLT.colt.exportProject(self.window)
+                coltProjectFilePath = COLT.colt.exportProject(self.window, OpenInColtCommand.html)
 
                 # Add project to workset file
                 COLT.colt.addToWorkingSet(coltProjectFilePath)
@@ -307,9 +340,19 @@ class RunWithColtCommand(AbstractColtRunCommand):
 
         def run(self):
                 settings = self.getSettings()
+                
+                # Check the file name
+                file = self.window.active_view().file_name()
+                if re.match(r'.*\\.html?$', file):
+                    OpenInColtCommand.html = file
+                    
+                if OpenInColtCommand.html is None :
+                    # Error message
+                    sublime.error_message('This tab is not html file. Please open project main html and try again.')
+                    return
 
                 # Export COLT project
-                coltProjectFilePath = COLT.colt.exportProject(self.window)
+                coltProjectFilePath = COLT.colt.exportProject(self.window, OpenInColtCommand.html)
 
                 # Add project to workset file
                 COLT.colt.addToWorkingSet(coltProjectFilePath)
