@@ -123,7 +123,7 @@ def exportProject(window, mainDocumentPath):
             rootElement = parse(coltProjectFilePath).getroot()
         
         rootElement.set("projectName", mainDocumentName)
-        rootElement.find("build").find("main-document").text = mainDocumentPath
+        rootElement.find("build").find("main-document").text = mainDocumentPath.replace('\\', '/')
 
         coltProjectFile = open(coltProjectFilePath, "w")
         content = str(tostring(rootElement))
