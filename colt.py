@@ -45,7 +45,7 @@ def addToWorkingSet(newProjectPath):
                                 projectsList.append(projectPath)
 
         # Remove project path from the list
-        filter(lambda projectPath : projectPath != newProjectPath, projectsList)
+        projectsList = list(filter(lambda projectPath : projectPath != newProjectPath, projectsList))
 
         # Push new project
         projectsList.insert(0, newProjectPath)
@@ -59,7 +59,7 @@ def addToWorkingSet(newProjectPath):
                 projectElement.set("path", projectPath)
 
         workingSetFile = open(workingSetFilePath, "w")
-        content = str(tostring(workingSetElement))
+        content = str(tostring(workingSetElement)).replace("\\\\","\\")
 
         if content.startswith("b'") :
                 content = content[2:len(content)-1]
