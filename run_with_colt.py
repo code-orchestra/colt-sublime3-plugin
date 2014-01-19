@@ -237,7 +237,7 @@ class ColtViewCallCountCommand(sublime_plugin.WindowCommand):
 class AppendToConsoleCommand(sublime_plugin.TextCommand):
         def run(self, edit, text):
                 self.view.insert(edit, self.view.size(), text + '\n')
-                self.view.show(self.size())
+                self.view.show(self.view.size())
                 
 class ColtViewValueCommand(sublime_plugin.WindowCommand):
         def run(self):
