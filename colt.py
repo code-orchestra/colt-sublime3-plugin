@@ -130,7 +130,7 @@ def exportProject(window, mainDocumentPath):
         rootElement.find("build").find("main-document").text = mainDocumentPath.replace('\\', '/')
 
         coltProjectFile = open(coltProjectFilePath, "w")
-        content = str(tostring(rootElement))
+        content = str(tostring(rootElement)).replace("\\\\","\\")
 
         if content.startswith("b'") :
                 content = content[2:len(content)-1]
