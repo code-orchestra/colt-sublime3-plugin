@@ -59,10 +59,7 @@ def addToWorkingSet(newProjectPath):
                 projectElement.set("path", projectPath)
 
         workingSetFile = open(workingSetFilePath, "w")
-        content = str(tostring(workingSetElement)).replace("\\\\","\\")
-
-        if content.startswith("b'") :
-                content = content[2:len(content)-1]
+        content = tostring(workingSetElement).decode("utf-8")
 
         workingSetFile.write(content)
         workingSetFile.close()
@@ -130,10 +127,7 @@ def exportProject(window, mainDocumentPath):
         rootElement.find("build").find("main-document").text = mainDocumentPath.replace('\\', '/')
 
         coltProjectFile = open(coltProjectFilePath, "w")
-        content = str(tostring(rootElement)).replace("\\\\","\\")
-
-        if content.startswith("b'") :
-                content = content[2:len(content)-1]
+        content = tostring(rootElement).decode("utf-8")
 
         coltProjectFile.write(content)
         coltProjectFile.close()
