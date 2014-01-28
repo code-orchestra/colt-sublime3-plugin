@@ -238,7 +238,7 @@ class IdleWatcher(sublime_plugin.EventListener):
                         if view.file_name() == info["filePath"]:
                             position = info["position"]
                             view.add_regions("error." + str(position), [sublime.Region(position)],
-                                "scope", "../COLT/icons/error@2x", sublime.HIDDEN)
+                                "scope", "Packages/COLT/icons/error@2x.png", sublime.HIDDEN)
                             IdleWatcher.ranges.append([view, "error." + str(position)])
                         
                     
@@ -321,6 +321,8 @@ class ColtRunFunctionCommand(sublime_plugin.WindowCommand):
                         methodId = methodId[1:len(methodId)-1]
 
                 COLT.colt_rpc.runMethod(methodId)
+                
+                self.window.run_command("get_all_counts")
         
         def is_enabled(self):
                 view = self.window.active_view()
