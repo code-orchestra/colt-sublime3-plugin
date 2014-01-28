@@ -59,9 +59,7 @@ def addToWorkingSet(newProjectPath):
                 projectElement.set("path", projectPath)
 
         workingSetFile = open(workingSetFilePath, "w")
-        content = tostring(workingSetElement).decode("utf-8")
-
-        workingSetFile.write(content)
+        workingSetFile.write(tostring(workingSetElement).decode("utf-8"))
         workingSetFile.close()
 
 def runCOLT(settings):
@@ -127,9 +125,7 @@ def exportProject(window, mainDocumentPath):
         rootElement.find("build").find("main-document").text = mainDocumentPath
 
         coltProjectFile = open(coltProjectFilePath, "w")
-        content = tostring(rootElement).decode("utf-8")
-
-        coltProjectFile.write(content)
+        coltProjectFile.write(tostring(rootElement).decode("utf-8"))
         coltProjectFile.close()
 
         return coltProjectFilePath
