@@ -470,7 +470,7 @@ class StartColtCommand(AbstractColtRunCommand):
 
 class RunWithColtCommand(AbstractColtRunCommand):
 
-        def run(self):
+        def run(self, nodeJs):
                 settings = self.getSettings()
                 
                 # Check the file name
