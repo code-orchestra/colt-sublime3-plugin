@@ -480,7 +480,7 @@ class RunWithColtCommand(AbstractColtRunCommand):
 
                 # Export COLT project
                 if nodeJs == "True" :
-                    coltProjectFilePath = colt.exportProject(self.window, file)
+                    coltProjectFilePath = COLT.colt.exportProject(self.window, file)
                 else :
                     if re.match(r'.*\.html?$', file):
                         OpenInColtCommand.html = file
