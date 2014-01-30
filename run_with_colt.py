@@ -492,7 +492,7 @@ class RunWithColtCommand(AbstractColtRunCommand):
                         sublime.error_message('This tab is not html file. Please open project main html and try again.')
                         return
 
-                    coltProjectFilePath = COLT.colt.exportProject(self.window, OpenInColtCommand.html)
+                    coltProjectFilePath = COLT.colt.exportProject(self.window, RunWithColtCommand.html)
 
                 # Add project to workset file
                 COLT.colt.addToWorkingSet(coltProjectFilePath)
