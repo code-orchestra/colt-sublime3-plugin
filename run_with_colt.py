@@ -477,6 +477,9 @@ class StartColtCommand(AbstractColtRunCommand):
                 # TODO: detect if colt is running and skip running it if it is
                 COLT.colt.runCOLT(settings)
 
+        def is_enabled(self):
+                return True
+
 
 class RunWithColtCommand(AbstractColtRunCommand):
     
