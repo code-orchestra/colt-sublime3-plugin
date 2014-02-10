@@ -59,20 +59,30 @@ class ColtCompletitions(sublime_plugin.EventListener):
                         return []
 
                 position = getPositionEnd(view)
+                
+                requestVars = False
 
                 if view.substr(position - 1) == "." :
                         position = position - 1
                 else :
-                        wordStart = view.word(getPosition(view)).begin()
+                        word = view.word(getPosition(view))
+                        wordStart = word.begin()
                         if view.substr(wordStart - 1) == "." :
                                 position = wordStart - 1
                         else :
-                                return []
+                                if re.match ("\s*", view.substr(word)) != None :
+                                    requestVars = True
+                                else :
+                                    return []
 
                 if not isConnected() or not hasActiveSessions() :
                         return []
 
-                response = COLT.colt_rpc.getContextForPosition(view.file_name(), position, getContent(view), "PROPERTIES")
+                response = None
+                if requestVars == True :
+                    response = COLT.colt_rpc.evaluateExpression(view.file_name(), "?", position, getContent(view))
+                else :
+                    response = COLT.colt_rpc.getContextForPosition(view.file_name(), position, getContent(view), "PROPERTIES")
                 if "error" in response :
                         return []
 
