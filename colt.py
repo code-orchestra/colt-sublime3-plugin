@@ -71,7 +71,8 @@ def runCOLT(settings):
         elif platform == "windows" :
                 subprocess.Popen([coltPath + "\\colt.exe"]) 
         else :
-                sublime.error_message("Unsupported platform: " + platform)
+                # sublime.error_message("Unsupported platform: " + platform)
+                subprocess.Popen([coltPath]) 
 
 def exportProject(window, mainDocumentPath):
         mainDocumentName = os.path.splitext(os.path.basename(mainDocumentPath))[0]
