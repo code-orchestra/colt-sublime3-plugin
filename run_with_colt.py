@@ -232,6 +232,7 @@ class IdleWatcher(sublime_plugin.EventListener):
                 return
             if len(resultJSON["result"]) > 0 :
                 
+                openConsole = False
                 syntaxErrors = []
                 
                 for info in resultJSON["result"] :
@@ -250,6 +251,13 @@ class IdleWatcher(sublime_plugin.EventListener):
                     else :
                         # just print it
                         print("[COLT] " + info["message"])
+                        try :
+                            if info["source"] == "License" :
+                                openConsole = True
+                        except KeyError :
+                            # old colt
+                            if re.match("^Maximum updates.*", info["message"]) :
+                                openConsole = True
                     
                 # now show syntax errors
                 for info in syntaxErrors :
@@ -260,8 +268,8 @@ class IdleWatcher(sublime_plugin.EventListener):
                                 "scope", "Packages/COLT/icons/error@2x.png", sublime.HIDDEN)
                             IdleWatcher.ranges.append([view, "error." + str(position), position, info["message"]])
                         
-                    
-                #sublime.active_window().run_command("show_panel", {"panel": "console", "toggle": False})
+                if openConsole :
+                    sublime.active_window().run_command("show_panel", {"panel": "console", "toggle": False})
         else :
             # clear all ranges
             for p in IdleWatcher.ranges:
