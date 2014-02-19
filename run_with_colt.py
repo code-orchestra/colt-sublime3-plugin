@@ -199,7 +199,7 @@ class ColtShowLastErrorsCommand(sublime_plugin.WindowCommand):
         items = []
         for p in IdleWatcher.ranges:
             items.append([p[3], "\tat " + p[4]])
-        self.window.show_quick_panel(items, self.on_done)
+        self.window.show_quick_panel(items, self.on_done, 0, 0, self.on_done)
 
     def on_done(self, picked):
         if picked == -1:
