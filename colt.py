@@ -62,17 +62,23 @@ def addToWorkingSet(newProjectPath):
         workingSetFile.write(tostring(workingSetElement).decode("utf-8"))
         workingSetFile.close()
 
-def runCOLT(settings):
+def runCOLT(settings, projectPath):
         coltPath = settings.get("coltPath")
 
+        command = []
         platform = sublime.platform()
         if platform == "osx" :
-                subprocess.Popen(["open", "-n", "-a", coltPath])
+            command.append("open", "-n", "-a", coltPath)
         elif platform == "windows" :
-                subprocess.Popen([coltPath + "\\colt.exe"]) 
+            if not coltPath.endswith('colt.exe') :
+                coltPath += "\\colt.exe"
+            command.append(coltPath)  
         else :
-                # sublime.error_message("Unsupported platform: " + platform)
-                subprocess.Popen([coltPath]) 
+                command.append(coltPath)
+        if not projectPath == None :
+            command.append(projectPath)
+
+        subprocess.Popen(command)                 
 
 def exportProject(window, mainDocumentPath):
         mainDocumentName = os.path.splitext(os.path.basename(mainDocumentPath))[0]
