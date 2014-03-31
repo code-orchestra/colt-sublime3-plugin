@@ -115,7 +115,7 @@ def exportProject(window, mainDocumentPath, basedir, overrides):
         # Settings
         settingsElement = SubElement(liveElement, "settings")
         createElement("clear-log", "false", settingsElement)
-        createElement("disconnect", "true", settingsElement)
+        createElement("disconnect", "false", settingsElement)
 
         # Launch
         launchElement = SubElement(liveElement, "launch")
