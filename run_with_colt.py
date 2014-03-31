@@ -4,6 +4,7 @@ import functools
 import os.path
 import json
 import re
+import time
 
 from COLT.colt import ColtPreferences, isColtFile
 from COLT.colt_rpc import ColtConnection, isConnected, hasActiveSessions
@@ -103,6 +104,9 @@ class ColtCompletitions(sublime_plugin.EventListener):
                                         displayStr = replaceStr
                                         cursiveStr = resultStr
 
+                                if cursiveStr != "" :
+                                        displayStr = cursiveStr
+                                        cursiveStr = ""
                                 completitions.append((displayStr + "\t" + cursiveStr + "[COLT]", replaceStr.replace('$', '\$')))
 
                 return completitions
@@ -217,6 +221,7 @@ class ColtShowLastErrorsCommand(sublime_plugin.WindowCommand):
 class IdleWatcher(sublime_plugin.EventListener):
     pending = 0
     ranges = []
+    sessionStartTime = 0.0
     runtimeError = { "message" : "" }
     
     @staticmethod
@@ -266,25 +271,38 @@ class IdleWatcher(sublime_plugin.EventListener):
                         # syntax error
                         if (len (info["message"]) == 0) :
                             # empty syntax error message signals that corresponding page was reloaded
+                            itemsToRemove = []
                             for p in IdleWatcher.ranges:
                                 if p[4] == info["filePath"]:
                                     if  p[0] != None :
                                         p[0].erase_regions(p[1])
-                                    IdleWatcher.ranges.remove(p)
+                                    itemsToRemove.append(p)
+                            for p in itemsToRemove :
+                                IdleWatcher.ranges.remove(p)
+                                
+                            itemsToRemove = []
+                            for pendingError in syntaxErrors :
+                                if pendingError["filePath"] == info["filePath"] :
+                                    itemsToRemove.append(pendingError)
+                            for p in itemsToRemove :
+                                syntaxErrors.remove(pendingError)
                         else :
                             # add to the list and print
                             syntaxErrors.append(info)
+                            if time.time() - IdleWatcher.sessionStartTime < 3.0 :
+                                # open console on syntax errors during 1st 3 seconds only
+                                openConsole = True
                             print("[COLT] " + info["message"])
                     else :
                         # just print it
                         print("[COLT] " + info["message"])
-                        try :
-                            if info["source"] == "License" :
-                                openConsole = True
-                        except KeyError :
-                            # old colt
-                            if re.match("^Maximum updates.*", info["message"]) :
-                                openConsole = True
+                        #try :
+                        #    if info["source"] == "License" :
+                        #        openConsole = True
+                        #except KeyError :
+                        #    # old colt
+                        #    if re.match("^Maximum updates.*", info["message"]) :
+                        #        openConsole = True
                     
                 # now show syntax errors
                 for info in syntaxErrors :
@@ -524,7 +542,7 @@ class StartColtCommand(AbstractColtRunCommand):
                 settings = self.getSettings()                
                 
                 # TODO: detect if colt is running and skip running it if it is
-                COLT.colt.runCOLT(settings)
+                COLT.colt.runCOLT(settings, None)
 
         def is_enabled(self):
                 return True
@@ -533,20 +551,61 @@ class StartColtCommand(AbstractColtRunCommand):
 class RunWithColtCommand(AbstractColtRunCommand):
     
         html = None
+        
+        def getBaseDir (self, file):
+            basedir = os.path.dirname(file)
+            folders = self.window.folders()
+            if len(folders) > 0:
+                basedir = folders[0]
+            return basedir
+
 
         def run(self, nodeJs = None):
                 settings = self.getSettings()
                 
                 # Check the file name
                 file = self.window.active_view().file_name()
+                fileBaseDir = self.getBaseDir(file)
                 
                 coltProjectFilePath = ""
 
+                launcherType = "BROWSER"
+                if nodeJs == "NodeJs" :
+                    launcherType = "NODE_JS"
+                if nodeJs == "Webkit" :
+                    launcherType = "NODE_WEBKIT"
+                    
+                # Override some settings using meta tags
+                overrides = {}
+                overrides["launcherType"] = launcherType
+                mainDocOverride = None
+                view = self.window.active_view()
+                viewContent = view.substr(sublime.Region(0, view.size() - 1))
+                metaTags = re.findall("<meta[^>]*>", viewContent, re.DOTALL)
+                for metaTag in metaTags :
+                    metaNameSearch = re.search("name=\"([^\"]+)", metaTag)
+                    if  metaNameSearch != None :
+                        metaName = metaNameSearch.group(1)
+                        
+                        metaContentSearch = re.search("content=\"([^\"]+)", metaTag)
+                        if  metaContentSearch != None :
+                            metaContent = metaContentSearch.group(1)
+                            
+                            print("Detected override: " + metaName + " -> " + metaContent)
+                            overrides[metaName] = metaContent
+                            
+                            # CJ-1211: if there's main doc override, remember it
+                            if (metaName == "colt-main-document") :
+                                mainDocOverride = fileBaseDir + os.path.sep + metaContent
+                
+                if mainDocOverride != None :
+                    RunWithColtCommand.html = mainDocOverride
+
                 # Export COLT project
-                if nodeJs == "True" :
-                    coltProjectFilePath = COLT.colt.exportProject(self.window, file)
+                if nodeJs == "NodeJs" :
+                    coltProjectFilePath = COLT.colt.exportProject(self.window, file, fileBaseDir, overrides)
                 else :
-                    if re.match(r'.*\.html?$', file):
+                    if re.match(r'.*\.html?$', file) and (mainDocOverride is None):
                         RunWithColtCommand.html = file
 
                     if RunWithColtCommand.html is None :
@@ -562,17 +621,42 @@ class RunWithColtCommand(AbstractColtRunCommand):
                             # Error message
                             sublime.error_message('This tab is not html file. Please open project main html and try again.')
                             return
+                        else :
+                            # override launcher, if possible 
+                            coltProjectFilePath = colt.exportProject(self.window, "", fileBaseDir, overrides)
+                            if coltProjectFilePath is None:
+                                sublime.error_message('This tab is not html file. Please open project main html and try again.')
+                                return
 
                     else :
                         # Start using (possibly) different html file as main
-                        coltProjectFilePath = COLT.colt.exportProject(self.window, RunWithColtCommand.html)
+                        coltProjectFilePath = COLT.colt.exportProject(self.window, RunWithColtCommand.html, self.getBaseDir(RunWithColtCommand.html), overrides)
 
                 # Add project to workset file
                 COLT.colt.addToWorkingSet(coltProjectFilePath)
 
                 # Run COLT
                 COLT.colt_rpc.initAndConnect(settings, coltProjectFilePath)
+                
+                IdleWatcher.sessionStartTime = time.time()
 
-                # Authorize and start live
+                # Authorize
                 COLT.colt_rpc.runAfterAuthorization = COLT.colt_rpc.startLive
                 COLT.colt_rpc.authorize(self.window)                                                          
+
+        
+class ColtShowJavadocCommand(sublime_plugin.WindowCommand):
+        def run(self):
+                view = self.window.active_view()
+
+                fileName = view.file_name()
+                position = getWordPosition(view)
+                content = getContent(view)
+
+                resultJSON = COLT.colt_rpc.findAndShowJavaDocs(fileName, position, content)
+
+        def is_enabled(self):
+                view = self.window.active_view()
+                if view is None :
+                        return False
+                return isConnected() and hasActiveSessions()
