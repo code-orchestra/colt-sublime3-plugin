@@ -74,6 +74,7 @@ def runCOLT(settings, projectPath):
             command.append("-n")
             command.append("-a")
             command.append(coltPath)
+            command.append("--args")
         elif platform == "windows" :
                 if not coltPath.endswith('colt.exe') :
                     coltPath += "\\colt.exe"
@@ -85,6 +86,7 @@ def runCOLT(settings, projectPath):
         if not projectPath == None :
             command.append(projectPath)
 
+        command.append("-plugin:SB3")
         subprocess.Popen(command)                 
 
 def exportProject(window, mainDocumentPath, basedir, overrides):
