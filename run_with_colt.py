@@ -88,10 +88,33 @@ class ColtCompletitions(sublime_plugin.EventListener):
                         return []
 
                 result = response["result"]
+                if result is None :
+                    if re.match("\\.js$", view.file_name()) == None :
+                        line = view.line(position)
+                        before = view.substr(sublime.Region(line.begin(), position))
+                        after = view.substr(sublime.Region(position, line.end()))
+                        # Between {{ and }}
+                        if (re.match(".*{{[^{}]*$", before) != None) and (re.match("^[^{}]*}}.*", after)):
+                            try : 
+                                tagId = COLT.colt_rpc.getEnclosingTagId(view.file_name(), position, getContent(view))["result"]
+                                result = COLT.colt_rpc.angularExpressionCompletion(tagId, re.match(".*{{([^{}]*)$", before).group(1))["result"]
+                            except KeyError :
+                                pass
+                        else :
+                            # Between <...=" and "
+                            if (re.match(".*<[^>]+=\"[^\"]*$", before) != None) and (re.match("^[^\"]*\".*", after)):
+                                try : 
+                                    tagId = COLT.colt_rpc.getEnclosingTagId(view.file_name(), position, getContent(view))["result"]
+                                    result = COLT.colt_rpc.angularExpressionCompletion(tagId, re.match(".*<[^>]+=\"([^\"]*)$", before).group(1))["result"]
+                                except KeyError :
+                                    pass
+                        
+                else :
+                    result = json.loads(result)
+
                 completitions = []
                 if not result is None :
-                        resultJSON = json.loads(result)
-                        for resultStr in resultJSON :
+                        for resultStr in result :
                                 if "{})" in resultStr :
                                         resultStr = resultStr.replace("{})", "")
 
