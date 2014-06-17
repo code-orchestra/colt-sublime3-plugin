@@ -627,8 +627,8 @@ class RunWithColtCommand(AbstractColtRunCommand):
                             overrides[metaName] = metaContent
                             
                             # CJ-1211: if there's main doc override, remember it
-                            if (metaName == "colt-main-document") :
-                                mainDocOverride = fileBaseDir + os.path.sep + metaContent
+                            if (metaName == "colt-main-document" and "http:" not in metaContent) :
+                                    mainDocOverride = fileBaseDir + os.path.sep + metaContent
                 
                 if mainDocOverride != None :
                     RunWithColtCommand.html = mainDocOverride
@@ -655,7 +655,7 @@ class RunWithColtCommand(AbstractColtRunCommand):
                             return
                         else :
                             # override launcher, if possible 
-                            coltProjectFilePath = colt.exportProject(self.window, "", fileBaseDir, overrides)
+                            coltProjectFilePath = COLT.colt.exportProject(self.window, "", fileBaseDir, overrides)
                             if coltProjectFilePath is None:
                                 sublime.error_message('This tab is not html file. Please open project main html and try again.')
                                 return
